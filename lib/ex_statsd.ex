@@ -29,12 +29,7 @@ defmodule ExStatsD do
               namespace: Application.get_env(:ex_statsd, :namespace, @default_namespace),
               sink:      Application.get_env(:ex_statsd, :sink, @default_sink),
               socket:    nil}
-    if state.sink do
-      GenServer.start_link(__MODULE__, state, [name: __MODULE__])
-    else
-      {:ok, socket} = :gen_udp.open(0)
-      GenServer.start_link(__MODULE__, %{state | socket: socket}, [name: __MODULE__])
-    end
+    GenServer.start_link(__MODULE__, state, [name: __MODULE__])
   end
 
   @doc """
@@ -132,14 +127,10 @@ defmodule ExStatsD do
   @doc false
   def handle_cast({:transmit, message, sample_rate}, state) do
     pkt = message |> packet(state.namespace, sample_rate)
-    :gen_udp.send(state.socket, state.host, state.port, pkt)
+    {:ok, socket} = :gen_udp.open(0, [:binary])
+    :gen_udp.send(socket, state.host, state.port, pkt)
+    :gen_udp.close(socket)
     {:noreply, state}
-  end
-
-  @doc false
-  def handle_call(:stop, state) do
-    if state.socket, do: :gen_udp.close(state.socket)
-    {:reply, state}
   end
 
 end
