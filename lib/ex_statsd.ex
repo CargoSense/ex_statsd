@@ -78,11 +78,6 @@ defmodule ExStatsD do
     end
   end
 
-  @doc """
-  Time a function at an optional sample rate.
-
-
-  """
   def timing(metric, fun, options \\ [sample_rate: 1]) do
     sampling options, fn(rate) ->
       {time, _} = :timer.tc(fun)
@@ -104,18 +99,11 @@ defmodule ExStatsD do
     end
   end
 
-  @doc false
   defp transmit(message), do: transmit(message, 1)
   defp transmit(message, sample_rate) do
     GenServer.cast(__MODULE__, {:transmit, message, sample_rate})
   end
 
-  @doc """
-  Generate the StatsD packet representation.
-
-  It expects a `message` with the key, value, and type sigil, a `namespace`
-  (that may be `nil`), and a `sample_rate` (that may be `1`).
-  """
   defp packet(message, namespace), do: packet(message, namespace, 1)
   defp packet({key, value, type}, namespace, sample_rate) do
     [key |> stat_name(namespace),
@@ -124,19 +112,11 @@ defmodule ExStatsD do
     ] |> IO.iodata_to_binary
   end
 
-  @doc """
-  Generate the packet suffix for a sample rate.
-
-  The suffix is empty if the sample rate is `1`.
-  """
   defp sample_rate_suffix(1), do: ""
   defp sample_rate_suffix(sample_rate) do
     ["|@", :io_lib.format('~.2f', [1.0 / sample_rate])]
   end
 
-  @doc """
-  Generate the dotted stat name for a `key` in `namespace`.
-  """
   defp stat_name(key, nil), do: key
   defp stat_name(key, namespace), do: "#{namespace}.#{key}"
 
