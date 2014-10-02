@@ -80,9 +80,10 @@ defmodule ExStatsD do
 
   def timing(metric, fun, options \\ [sample_rate: 1]) do
     sampling options, fn(rate) ->
-      {time, _} = :timer.tc(fun)
+      {time, value} = :timer.tc(fun)
       amount = time / 1000.0
       {metric, amount, :ms} |> transmit(rate)
+      value
     end
   end
 
