@@ -5,7 +5,15 @@ defmodule ExStatsD.Mixfile do
     [app: :ex_statsd,
      version: "0.2.0",
      elixir: "~> 1.0.0",
+     package: package,
      deps: deps]
+  end
+
+  defp package do
+    [description: "A StatsD client for Elixir",
+     contributors: ["Bruce Williams"],
+     licenses: ["MIT"],
+     links: %{github: "https://github.com/CargoSense/ex_statsd"}]
   end
 
   # Configuration for the OTP application
