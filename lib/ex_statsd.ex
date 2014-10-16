@@ -49,34 +49,73 @@ defmodule ExStatsD do
 
   # API
 
+  @doc """
+  Record a counter metric.
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def counter(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
       {metric, amount, :c} |> transmit(options, rate)
     end
   end
 
+  @doc """
+  Record an increment to a counter metric.
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def increment(metric, options \\ [sample_rate: 1, tags: []]) do
     1 |> counter(metric, options)
   end
 
+  @doc """
+  Record a decrement to a counter metric.
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def decrement(metric, options \\ [sample_rate: 1, tags: []]) do
     -1 |> counter(metric, options)
   end
 
+  @doc """
+  Record a gauge entry.
+
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def gauge(amount, metric, options \\ [tags: []]) do
     {metric, amount, :g} |> transmit(options)
   end
 
+  @doc """
+  Record a set metric.
+
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def set(member, metric, options \\ [tags: []]) do
     {metric, member, :s} |> transmit(options)
   end
 
+  @doc """
+  Record a timer metric.
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def timer(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
       {metric, amount, :ms} |> transmit(options, rate)
     end
   end
 
+  @doc """
+  ## Options
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+  """
   def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
       {time, value} = :timer.tc(fun)
@@ -86,6 +125,9 @@ defmodule ExStatsD do
     end
   end
 
+  @doc """
+  (DogStatsD-only)
+  """
   def histogram(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
       {metric, amount, :h} |> transmit(options, rate)

@@ -40,6 +40,9 @@ The defaults are:
  * port: 8125
  * namespace: nil
 
+The following are the basic metric types. Additional features are
+described in "Extensions," below.
+
 ### Counters
 
 Counters can be manipulated with `ExStatsD.increment/1` and
@@ -109,6 +112,30 @@ A value can be recorded in a set with `ExStatsD.set/2`:
 
 ```elixir
 user_id |> ExStatsD.set("users")
+```
+
+## Extensions
+
+### Datadog
+
+#### Tags
+
+All metrics support the
+[Datadog-specific tags extension](http://docs.datadoghq.com/guides/dogstatsd/#tags)
+to StatsD. If you are using DogStatsD, you may provide a `tags`
+option, eg:
+
+```elixir
+ExStatsD.increment("cart.added", tags: ~w(foo bar))
+```
+
+#### Histograms
+
+The [histogram](http://docs.datadoghq.com/guides/dogstatsd/#histograms)
+extension to StatsD is supported for DogStatsD:
+
+```elixir
+42 |> ExStatsD.histogram("database.query.time", tags: ["db", "perf"])
 ```
 
 ## License
