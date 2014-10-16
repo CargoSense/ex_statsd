@@ -49,41 +49,51 @@ defmodule ExStatsD do
 
   # API
 
-  def counter(amount, metric, options \\ [sample_rate: 1]) do
+  def counter(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
-      {metric, amount, :c} |> transmit(rate)
+      {metric, amount, :c} |> transmit(options, rate)
     end
   end
 
-  def increment(metric, options \\ [sample_rate: 1]) do
+  def increment(metric, options \\ [sample_rate: 1, tags: []]) do
     1 |> counter(metric, options)
   end
 
-  def decrement(metric, options \\ [sample_rate: 1]) do
+  def decrement(metric, options \\ [sample_rate: 1, tags: []]) do
     -1 |> counter(metric, options)
   end
 
-  def gauge(amount, metric), do: {metric, amount, :g} |> transmit
+  def gauge(amount, metric, options \\ [tags: []]) do
+    {metric, amount, :g} |> transmit(options)
+  end
 
-  def set(member, metric), do: {metric, member, :s} |> transmit
+  def set(member, metric, options \\ [tags: []]) do
+    {metric, member, :s} |> transmit(options)
+  end
 
-  def timer(amount, metric, options \\ [sample_rate: 1]) do
+  def timer(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
-      {metric, amount, :ms} |> transmit(rate)
+      {metric, amount, :ms} |> transmit(options, rate)
     end
   end
 
-  def timing(metric, fun, options \\ [sample_rate: 1]) do
+  def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(rate) ->
       {time, value} = :timer.tc(fun)
       amount = time / 1000.0
-      {metric, amount, :ms} |> transmit(rate)
+      {metric, amount, :ms} |> transmit(options, rate)
       value
     end
   end
 
+  def histogram(amount, metric, options \\ [sample_rate: 1, tags: []]) do
+    sampling options, fn(rate) ->
+      {metric, amount, :h} |> transmit(options, rate)
+    end
+  end
+
   defp sampling(options, fun) when is_list(options) do
-    case Keyword.fetch!(options, :sample_rate) do
+    case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.(1)
       sample_rate -> sample(sample_rate, fun)
     end
@@ -95,16 +105,16 @@ defmodule ExStatsD do
     end
   end
 
-  defp transmit(message), do: transmit(message, 1)
-  defp transmit(message, sample_rate) do
-    GenServer.cast(__MODULE__, {:transmit, message, sample_rate})
+  defp transmit(message, options), do: transmit(message, options, 1)
+  defp transmit(message, options, sample_rate) do
+    GenServer.cast(__MODULE__, {:transmit, message, options, sample_rate})
   end
 
-  defp packet(message, namespace), do: packet(message, namespace, 1)
-  defp packet({key, value, type}, namespace, sample_rate) do
+  defp packet({key, value, type}, namespace, tags, sample_rate) do
     [key |> stat_name(namespace),
      ":#{value}|#{type}",
-     sample_rate |> sample_rate_suffix
+     sample_rate |> sample_rate_suffix,
+     tags |> tags_suffix
     ] |> IO.iodata_to_binary
   end
 
@@ -113,20 +123,27 @@ defmodule ExStatsD do
     ["|@", :io_lib.format('~.2f', [1.0 / sample_rate])]
   end
 
+  defp tags_suffix([]), do: ""
+  defp tags_suffix(tags) do
+    ["|#", tags |> Enum.join(",")]
+  end
+
   defp stat_name(key, nil), do: key
   defp stat_name(key, namespace), do: "#{namespace}.#{key}"
 
   # SERVER
 
   @doc false
-  def handle_cast({:transmit, message, sample_rate}, %{sink: sink} = state) when is_list(sink) do
-    pkt = message |> packet(state.namespace, sample_rate)
+  def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink} = state) when is_list(sink) do
+    tags = Keyword.get(options, :tags, [])
+    pkt = message |> packet(state.namespace, tags, sample_rate)
     {:noreply, %{state | sink: [pkt | sink]}}
   end
 
   @doc false
-  def handle_cast({:transmit, message, sample_rate}, state) do
-    pkt = message |> packet(state.namespace, sample_rate)
+  def handle_cast({:transmit, message, options, sample_rate}, state) do
+    tags = Keyword.get(options, :tags, [])
+    pkt = message |> packet(state.namespace, tags, sample_rate)
     {:ok, socket} = :gen_udp.open(0, [:binary])
     :gen_udp.send(socket, state.host, state.port, pkt)
     :gen_udp.close(socket)
