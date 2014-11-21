@@ -136,6 +136,20 @@ defmodule ExStatsD do
     end
   end
 
+  @doc """
+  (DogStatsD-only)
+  """
+  def histogram_timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
+    sampling options, fn(rate) ->
+      {time, value} = :timer.tc(fun)
+      amount = time / 1000.0
+      # We should hard code the amount when we are in test mode.
+      if (Mix.env == :test), do: amount = 1.234
+      {metric, amount, :h} |> transmit(options, rate)
+      value
+    end
+  end
+
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.(1)
