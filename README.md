@@ -138,6 +138,68 @@ extension to StatsD is supported for DogStatsD:
 42 |> ExStatsD.histogram("database.query.time", tags: ["db", "perf"])
 ```
 
+#### Histogram Timing
+
+A histogram version of the [ExStatsD.timing](#timers) function:
+
+```elixir
+ExStatsD.histogram_timing "foo.bar", fn ->
+  # Time something
+end
+```
+
+### Decorators
+
+The decorators allow you to quickly and easily time function calls in your code. Simply replace `def` with `def_timed` for those functions you wish to time.
+
+```elixir
+defmodule MyModule.Data do
+  use ExStatsD.Decorator
+  @use_histogram false # optional. Defaults to false. (For use with Datadog)
+  @default_metric_options [] # optional. Defaults to [].
+
+  def init() do
+    :whatever
+  end
+
+  def_timed slow_function() do
+    # This is a suspect function we wish to time.
+  end
+
+end
+```
+
+Now all calls to `MyModule.Data.slow_function/0` will be timed and reported to your statsd server. By default the metric key used for each call will be "PREFIX.function_call.MODULE.FUNCTION_ARITY". So in this example it would have been `function_call.mymodule.data.slow_function_0`.
+
+You can change the metric name by setting the `@metric` attribute ahead of the function. The metric will apply to other function definitions of the same arity unless specifically changed again. Other following functions of different name or arity will use the default.
+
+```elixir
+def_timed init(), do: nil # Metric will be PREFIX.function_call.mymodule.data.init_0
+
+@metric "trace.some_function"
+def_timed some_function(1), do: nil # Metric will be PREFIX.myfunction
+def_timed some_function(2), do: nil # Metric will be PREFIX.myfunction
+@metric "trace.some_function_catchall"
+def_timed some_function(x) when is_list(x), do: nil # Metric will be PREFIX.trace.some_function_catchall
+def_timed some_function(x), do: nil # Metric will be PREFIX.trace.some_function_catchall
+
+def_timed some_function(x,y), do: nil # Metric will be PREFIX.function_call.mymodule.data.some_function_2
+```
+
+You can set options using the `@metric_options` attribute. This follows the same rules as with the `@metric` example abobe.
+
+Here we use Datadog's "tag" extension to StatD:
+
+```elixir
+@metric_options [tags: ["basic"]]
+def_timed some_function(), do: nil
+```
+
+There are 2 global options available. Both will apply to all functions that follow it unless locally overridden.
+
+ * `@default_metric_options`: Metric options to use unless overridden with `@metric_options`. Defaults to [].
+ * `@use_histogram`: Send results using histograms instead of gauges. For use with Datadog's DogStatD. Defaults to false.
+
 ## License
 
 The MIT License (MIT)
