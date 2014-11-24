@@ -4,12 +4,15 @@ defmodule DecoratorTest do
   defmodule DecoratedModule do
     use ExStatsD.Decorator
 
-    def_timed simple, do: nil
+    def_timed simple do
+      result = :simple
+      result
+    end
 
     @metric "custom_key"
-    def_timed custom_name, do: nil
+    def_timed custom_name, do: :custom_name
 
-    def_timed custom_name_gone, do: nil
+    def_timed custom_name_gone, do: :custom_name_gone
 
     @metric "multi_0_or_1"
     def_timed multi(0), do: 0
@@ -18,8 +21,8 @@ defmodule DecoratorTest do
     def_timed multi(x), do: x
 
     @metric_options [tags: [:mytag]]
-    def_timed with_options, do: nil
-    def_timed options_gone, do: nil
+    def_timed with_options, do: :with_options
+    def_timed options_gone, do: :options_gone
 
     @metric_options [tags: [:options_fall_through]]
     def_timed multi_options(0), do: 0
@@ -32,10 +35,11 @@ defmodule DecoratorTest do
     def_timed multi_attrs(x, y, z), do: {x, y, z}
 
     @default_metric_options [tags: ["mine"]]
-    def_timed ignored_attr(_x), do: nil
-    def_timed unbound_attr(_), do: nil
+    def_timed ignored_attr(_x), do: :ignored_attr
+    def_timed unbound_attr(_), do: :unbound_attr
 
-    def_timed guarded(x) when is_list(x), do: nil
+    def_timed guarded(x) when is_list(x), do: {:ok, x}
+    def_timed guarded(_x), do: {:error, :not_a_list}
 
   end
 
@@ -50,20 +54,20 @@ defmodule DecoratorTest do
   @prefix "test.function_call.elixir.decoratortest.decoratedmodule."
 
   test "basic wrapper with defaults" do
-    DecoratedModule.simple
+    assert DecoratedModule.simple === :simple
     expected = [@prefix<>"simple_0:1.234|ms"]
     assert sent == expected
   end
 
   test "custom metric name" do
-    DecoratedModule.custom_name
+    assert DecoratedModule.custom_name === :custom_name
     expected = ["test.custom_key:1.234|ms"]
     assert sent == expected
   end
 
   test "custom metric name does not leak to next function" do
-    DecoratedModule.custom_name
-    DecoratedModule.custom_name_gone
+    assert DecoratedModule.custom_name === :custom_name
+    assert DecoratedModule.custom_name_gone === :custom_name_gone
     expected = [
       @prefix<>"custom_name_gone_0:1.234|ms",
       "test.custom_key:1.234|ms"
@@ -72,9 +76,9 @@ defmodule DecoratorTest do
   end
 
   test "custom metric name falling to next in match unless changed" do
-    DecoratedModule.multi(0)
-    DecoratedModule.multi(1)
-    DecoratedModule.multi(2)
+    assert DecoratedModule.multi(0) === 0
+    assert DecoratedModule.multi(1) === 1
+    assert DecoratedModule.multi(2) === 2
     expected = [
       "test.multi_other:1.234|ms",
       "test.multi_0_or_1:1.234|ms",
@@ -84,8 +88,8 @@ defmodule DecoratorTest do
   end
 
   test "tags are set and don't leak" do
-    DecoratedModule.with_options
-    DecoratedModule.options_gone
+    assert DecoratedModule.with_options === :with_options
+    assert DecoratedModule.options_gone === :options_gone
     expected = [
       @prefix<>"options_gone_0:1.234|ms",
       @prefix<>"with_options_0:1.234|ms|#mytag"
@@ -94,9 +98,9 @@ defmodule DecoratorTest do
   end
 
   test "tags fall through and get updated" do
-    DecoratedModule.multi_options(0)
-    DecoratedModule.multi_options(1)
-    DecoratedModule.multi_options(2)
+    assert DecoratedModule.multi_options(0) === 0
+    assert DecoratedModule.multi_options(1) === 1
+    assert DecoratedModule.multi_options(2) === 2
     expected = [
       @prefix<>"multi_options_1:1.234|ms|#options_get_changed",
       @prefix<>"multi_options_1:1.234|ms|#options_fall_through",
@@ -106,8 +110,8 @@ defmodule DecoratorTest do
   end
 
   test "send using histogram when enabled in all following functions" do
-    DecoratedModule.multi_attrs(1, 2)
-    DecoratedModule.multi_attrs(1, 2, 3)
+    assert DecoratedModule.multi_attrs(1, 2) === {1, 2}
+    assert DecoratedModule.multi_attrs(1, 2, 3) === {1, 2, 3}
     expected = [
       @prefix<>"multi_attrs_3:1.234|h",
       @prefix<>"multi_attrs_2:1.234|h"
@@ -116,8 +120,8 @@ defmodule DecoratorTest do
   end
 
   test "default options can be changed" do
-    DecoratedModule.ignored_attr(1)
-    DecoratedModule.unbound_attr(2)
+    assert DecoratedModule.ignored_attr(:ingnored) === :ignored_attr
+    assert DecoratedModule.unbound_attr(:unbound) === :unbound_attr
     expected = [
       @prefix<>"unbound_attr_1:1.234|h|#mine",
       @prefix<>"ignored_attr_1:1.234|h|#mine"
