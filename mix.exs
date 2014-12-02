@@ -6,7 +6,11 @@ defmodule ExStatsD.Mixfile do
      version: "0.5.0",
      elixir: "~> 1.0.0",
      package: package,
-     deps: deps]
+     deps: deps,
+     # Documentation
+     name: "ex_statsd",
+     source_url: "https://github.com/CargoSense/ex_statsd",
+     docs: [readme: true, main: "overview"]]
   end
 
   defp package do
@@ -40,7 +44,8 @@ defmodule ExStatsD.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{:ex_doc, "~> 0.5", only: :dev}]
+    [{:ex_doc, "~> 0.5", only: :dev},
+     {:earmark, ">= 0.0.0", only: :dev}]
   end
 
 end
