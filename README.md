@@ -10,7 +10,7 @@ Add ExStatsD as a dependency for your application.
 
 ```elixir
 defp deps do
-  [{:ex_statsd, ">= 0.1.0"}]
+  [{:ex_statsd, ">= 0.5.0"}]
 end
 ```
 
