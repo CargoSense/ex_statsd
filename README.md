@@ -106,6 +106,9 @@ ExStatsD.timing "foo.bar", fn ->
 end, sample_rate: 0.5
 ```
 
+Note that (as of v0.3.0), regardless of the sample rate the function
+is always called -- it's just not always measured.
+
 ### Sets
 
 A value can be recorded in a set with `ExStatsD.set/2`:

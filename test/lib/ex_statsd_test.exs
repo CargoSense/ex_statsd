@@ -30,6 +30,11 @@ defmodule ExStatsDTest do
     ExStatsD.decrement("events", sample_rate: 0.15)
   end
 
+  test "timing always calls" do
+    values = Enum.map 1..100, fn n -> ExStatsD.timing("foo.bar", fn -> n * 2 end, sample_rate: 0.01) end
+    assert values == Enum.map(1..100, fn n -> n * 2 end)
+  end
+
   test "timer" do
     12 |> ExStatsD.timer("fun.elapsed")
     assert sent == ["test.fun.elapsed:12|ms"]
