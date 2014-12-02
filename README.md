@@ -165,7 +165,7 @@ end
 
 ### Decorators
 
-The decorators allow you to quickly and easily time function calls in your code. Simply replace `def` with `def_timed` for those functions you wish to time.
+The decorators allow you to quickly and easily time function calls in your code. Simply replace `def` with `deftimed` for those functions you wish to time.
 
 ```elixir
 defmodule MyModule.Data do
@@ -175,7 +175,7 @@ defmodule MyModule.Data do
 
   def init, do: :whatever
 
-  def_timed slow_function do
+  deftimed slow_function do
     # This is a suspect function we wish to time.
   end
 
@@ -194,17 +194,17 @@ definitions of the same arity unless specifically changed again. Other
 following functions of different name or arity will use the default.
 
 ```elixir
-def_timed init, do: nil # PREFIX.function_call.mymodule.data.init_0
+deftimed init, do: nil # PREFIX.function_call.mymodule.data.init_0
 
 @metric "trace.some_function"
-def_timed some_function(1), do: nil # PREFIX.trace.some_function
-def_timed some_function(2), do: nil # PREFIX.trace.some_function
+deftimed some_function(1), do: nil # PREFIX.trace.some_function
+deftimed some_function(2), do: nil # PREFIX.trace.some_function
 
 @metric "trace.some_function_catchall"
-def_timed some_function(x) when is_list(x), do: nil # PREFIX.trace.some_function_catchall
-def_timed some_function(x), do: nil # PREFIX.trace.some_function_catchall
+deftimed some_function(x) when is_list(x), do: nil # PREFIX.trace.some_function_catchall
+deftimed some_function(x), do: nil # PREFIX.trace.some_function_catchall
 
-def_timed some_function(x,y), do: nil # PREFIX.function_call.mymodule.data.some_function_2
+deftimed some_function(x,y), do: nil # PREFIX.function_call.mymodule.data.some_function_2
 ```
 
 You can set options using the `@metric_options` attribute. This follows the same rules as with the `@metric` example abobe.
@@ -213,7 +213,7 @@ Here we use Datadog's "tag" extension to StatD:
 
 ```elixir
 @metric_options [tags: ["basic"]]
-def_timed some_function(), do: nil
+deftimed some_function(), do: nil
 ```
 
 There are 2 global options available. Both will apply to all functions that follow it unless locally overridden.

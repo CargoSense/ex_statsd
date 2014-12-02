@@ -1,45 +1,47 @@
-defmodule DecoratorTest do
+defmodule ExStatsD.DecoratorTest do
   use ExUnit.Case, async: false
+
+  @stubbed_timing 1.234
 
   defmodule DecoratedModule do
     use ExStatsD.Decorator
 
-    def_timed simple do
+    deftimed simple do
       result = :simple
       result
     end
 
     @metric "custom_key"
-    def_timed custom_name, do: :custom_name
+    deftimed custom_name, do: :custom_name
 
-    def_timed custom_name_gone, do: :custom_name_gone
+    deftimed custom_name_gone, do: :custom_name_gone
 
     @metric "multi_0_or_1"
-    def_timed multi(0), do: 0
-    def_timed multi(1), do: 1
+    deftimed multi(0), do: 0
+    deftimed multi(1), do: 1
     @metric "multi_other"
-    def_timed multi(x), do: x
+    deftimed multi(x), do: x
 
     @metric_options [tags: [:mytag]]
-    def_timed with_options, do: :with_options
-    def_timed options_gone, do: :options_gone
+    deftimed with_options, do: :with_options
+    deftimed options_gone, do: :options_gone
 
     @metric_options [tags: [:options_fall_through]]
-    def_timed multi_options(0), do: 0
-    def_timed multi_options(1), do: 1
+    deftimed multi_options(0), do: 0
+    deftimed multi_options(1), do: 1
     @metric_options [tags: [:options_get_changed]]
-    def_timed multi_options(x), do: x
+    deftimed multi_options(x), do: x
 
     @use_histogram true
-    def_timed multi_attrs(x, y), do: {x, y}
-    def_timed multi_attrs(x, y, z), do: {x, y, z}
+    deftimed multi_attrs(x, y), do: {x, y}
+    deftimed multi_attrs(x, y, z), do: {x, y, z}
 
     @default_metric_options [tags: ["mine"]]
-    def_timed ignored_attr(_x), do: :ignored_attr
-    def_timed unbound_attr(_), do: :unbound_attr
+    deftimed ignored_attr(_x), do: :ignored_attr
+    deftimed unbound_attr(_), do: :unbound_attr
 
-    def_timed guarded(x) when is_list(x), do: {:ok, x}
-    def_timed guarded(_x), do: {:error, :not_a_list}
+    deftimed guarded(x) when is_list(x), do: {:ok, x}
+    deftimed guarded(_x), do: {:error, :not_a_list}
 
   end
 
@@ -51,7 +53,7 @@ defmodule DecoratorTest do
     {:ok, pid: pid}
   end
 
-  @prefix "test.function_call.elixir.decoratortest.decoratedmodule."
+  @prefix "test.function_call.elixir.exstatsd.decoratortest.decoratedmodule."
 
   test "basic wrapper with defaults" do
     assert DecoratedModule.simple === :simple

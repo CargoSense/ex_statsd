@@ -7,7 +7,7 @@ defmodule ExStatsD.Decorator do
     end
   end
 
-  defmacro def_timed(head, body \\ nil) do
+  defmacro deftimed(head, body \\ nil) do
     {fun_name, args_ast} = Macro.decompose_call(head)
     arg_length = length(args_ast)
     quote do
@@ -70,8 +70,6 @@ defmodule ExStatsD.Decorator do
     else
       get_metric_options(module, function_id)
     end
-    # Let's just disable sample_rate as it makes *no* sense for this.
-    Keyword.delete(options, :sample_rate)
   end
 
   defp get_metric_options(module, function_id) do
