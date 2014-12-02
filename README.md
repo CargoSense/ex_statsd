@@ -173,32 +173,38 @@ defmodule MyModule.Data do
   @use_histogram false # optional. Defaults to false. (For use with Datadog)
   @default_metric_options [] # optional. Defaults to [].
 
-  def init() do
-    :whatever
-  end
+  def init, do: :whatever
 
-  def_timed slow_function() do
+  def_timed slow_function do
     # This is a suspect function we wish to time.
   end
 
 end
 ```
 
-Now all calls to `MyModule.Data.slow_function/0` will be timed and reported to your statsd server. By default the metric key used for each call will be "PREFIX.function_call.MODULE.FUNCTION_ARITY". So in this example it would have been `function_call.mymodule.data.slow_function_0`.
+Now all calls to `MyModule.Data.slow_function/0` will be timed and
+reported to your statsd server. By default the metric key used for
+each call will be "PREFIX.function_call.MODULE.FUNCTION_ARITY". So in
+this example it would have been
+`function_call.mymodule.data.slow_function_0`.
 
-You can change the metric name by setting the `@metric` attribute ahead of the function. The metric will apply to other function definitions of the same arity unless specifically changed again. Other following functions of different name or arity will use the default.
+You can change the metric name by setting the `@metric` attribute
+ahead of the function. The metric will apply to other function
+definitions of the same arity unless specifically changed again. Other
+following functions of different name or arity will use the default.
 
 ```elixir
-def_timed init(), do: nil # Metric will be PREFIX.function_call.mymodule.data.init_0
+def_timed init, do: nil # PREFIX.function_call.mymodule.data.init_0
 
 @metric "trace.some_function"
-def_timed some_function(1), do: nil # Metric will be PREFIX.myfunction
-def_timed some_function(2), do: nil # Metric will be PREFIX.myfunction
-@metric "trace.some_function_catchall"
-def_timed some_function(x) when is_list(x), do: nil # Metric will be PREFIX.trace.some_function_catchall
-def_timed some_function(x), do: nil # Metric will be PREFIX.trace.some_function_catchall
+def_timed some_function(1), do: nil # PREFIX.trace.some_function
+def_timed some_function(2), do: nil # PREFIX.trace.some_function
 
-def_timed some_function(x,y), do: nil # Metric will be PREFIX.function_call.mymodule.data.some_function_2
+@metric "trace.some_function_catchall"
+def_timed some_function(x) when is_list(x), do: nil # PREFIX.trace.some_function_catchall
+def_timed some_function(x), do: nil # PREFIX.trace.some_function_catchall
+
+def_timed some_function(x,y), do: nil # PREFIX.function_call.mymodule.data.some_function_2
 ```
 
 You can set options using the `@metric_options` attribute. This follows the same rules as with the `@metric` example abobe.
@@ -214,7 +220,6 @@ There are 2 global options available. Both will apply to all functions that foll
 
  * `@default_metric_options`: Metric options to use unless overridden with `@metric_options`. Defaults to [].
  * `@use_histogram`: Send results using histograms instead of gauges. For use with Datadog's DogStatD. Defaults to false.
->>>>>>> Update README with Decorator info.
 
 ## License
 
