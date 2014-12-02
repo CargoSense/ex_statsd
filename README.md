@@ -165,15 +165,13 @@ end
 
 ### Decorators
 
-The decorators allow you to quickly and easily time function calls in your code. Simply replace `def` with `deftimed` for those functions you wish to time.
+The decorators allow you to quickly and easily time function calls in
+your code. Simply replace `def` with `deftimed` for those functions
+you wish to time.
 
 ```elixir
 defmodule MyModule.Data do
   use ExStatsD.Decorator
-  @use_histogram false # optional. Defaults to false. (For use with Datadog)
-  @default_metric_options [] # optional. Defaults to [].
-
-  def init, do: :whatever
 
   deftimed slow_function do
     # This is a suspect function we wish to time.
@@ -184,7 +182,7 @@ end
 
 Now all calls to `MyModule.Data.slow_function/0` will be timed and
 reported to your statsd server. By default the metric key used for
-each call will be "PREFIX.function_call.MODULE.FUNCTION_ARITY". So in
+each call will be `PREFIX.function_call.MODULE.FUNCTION_ARITY`. So in
 this example it would have been
 `function_call.mymodule.data.slow_function_0`.
 
