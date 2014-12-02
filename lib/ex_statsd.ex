@@ -17,6 +17,7 @@ defmodule ExStatsD do
   @default_host "127.0.0.1"
   @default_namespace nil
   @default_sink nil
+  @timing_stub 1.234
 
   # CLIENT
 
@@ -177,9 +178,11 @@ defmodule ExStatsD do
   def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
       case decision do
-        {:decision, rate} ->
+        {:sample, rate} ->
           {time, value} = :timer.tc(fun)
           amount = time / 1000.0
+          # We should hard code the amount when we are in test mode.
+          if (Mix.env == :test), do: amount = @timing_stub
           {metric, amount, :ms} |> transmit(options, rate)
           value
         _ ->
@@ -205,6 +208,31 @@ defmodule ExStatsD do
           amount
         _ ->
           amount
+      end
+    end
+  end
+
+  @doc """
+  Time a function using a histogram metric (DogStatsD-only).
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the result of the function call, making it suitable
+  for pipelining.
+  """
+  def histogram_timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
+    sampling options, fn(decision) ->
+      case decision do
+        {:sample, rate} ->
+          {time, value} = :timer.tc(fun)
+          amount = time / 1000.0
+          # We should hard code the amount when we are in test mode.
+          if (Mix.env == :test), do: amount = @timing_stub
+          {metric, amount, :h} |> transmit(options, rate)
+          value
+        _ ->
+          fun.()
       end
     end
   end
