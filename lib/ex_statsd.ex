@@ -177,7 +177,7 @@ defmodule ExStatsD do
   def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
       case decision do
-        {:decision, rate} ->
+        {:sample, rate} ->
           {time, value} = :timer.tc(fun)
           amount = time / 1000.0
           {metric, amount, :ms} |> transmit(options, rate)
