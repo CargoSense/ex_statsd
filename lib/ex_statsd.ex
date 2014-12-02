@@ -56,8 +56,11 @@ defmodule ExStatsD do
   * `tags`: Add tags to entry (DogStatsD-only)
   """
   def counter(amount, metric, options \\ [sample_rate: 1, tags: []]) do
-    sampling options, fn(rate) ->
-      {metric, amount, :c} |> transmit(options, rate)
+    sampling options, fn(decision) ->
+      case decision do
+        {:sample, rate} -> {metric, amount, :c} |> transmit(options, rate); decision
+        _ -> decision
+      end
     end
   end
 
@@ -106,8 +109,11 @@ defmodule ExStatsD do
   * `tags`: Add tags to entry (DogStatsD-only)
   """
   def timer(amount, metric, options \\ [sample_rate: 1, tags: []]) do
-    sampling options, fn(rate) ->
-      {metric, amount, :ms} |> transmit(options, rate)
+    sampling options, fn(decision) ->
+      case decision do
+        {:sample, rate} -> {metric, amount, :ms} |> transmit(options, rate); decision
+        _ -> decision
+      end
     end
   end
 
@@ -117,11 +123,15 @@ defmodule ExStatsD do
   * `tags`: Add tags to entry (DogStatsD-only)
   """
   def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
-    sampling options, fn(rate) ->
-      {time, value} = :timer.tc(fun)
-      amount = time / 1000.0
-      {metric, amount, :ms} |> transmit(options, rate)
-      value
+    sampling options, fn(decision) ->
+      case decision do
+        {:decision, rate} ->
+          {time, value} = :timer.tc(fun)
+          amount = time / 1000.0
+          {metric, amount, :ms} |> transmit(options, rate)
+          value
+        _ -> fun.()
+      end
     end
   end
 
@@ -129,21 +139,25 @@ defmodule ExStatsD do
   (DogStatsD-only)
   """
   def histogram(amount, metric, options \\ [sample_rate: 1, tags: []]) do
-    sampling options, fn(rate) ->
-      {metric, amount, :h} |> transmit(options, rate)
+    sampling options, fn(decision) ->
+      case decision do
+        {:sample, rate} ->
+          {metric, amount, :h} |> transmit(options, rate)
+        _ -> decision
+      end
     end
   end
 
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
-      1 -> fun.(1)
+      1 -> fun.({:sample, 1})
       sample_rate -> sample(sample_rate, fun)
     end
   end
   defp sample(sample_rate, fun) do
     case :random.uniform <= sample_rate do
-      true -> fun.(sample_rate)
-      _ -> :not_sampled
+      true -> fun.({:sample, sample_rate})
+      _ -> fun.(:no_sample)
     end
   end
 
