@@ -80,6 +80,9 @@ You can also send a `sample_rate`:
 3 |> ExStatsD.counter("cart.removed", sample_rate: 0.25)
 ```
 
+Note that the function returns the value (eg, `3` here), making it
+suitable for pipelining.
+
 ### Timers
 
 Manually timed values can be recorded with `ExStatsD.timer/2`:
@@ -88,6 +91,9 @@ Manually timed values can be recorded with `ExStatsD.timer/2`:
 elapsed_ms = # something manually timed in
 elapsed_ms |> ExStatsD.timer("foobar")
 ```
+
+The value passed to `ExStatsD.timer/2` (eg, `elapsed_ms` here) is
+returned from it, making this suitable for pipelining.
 
 For convenience, you can also time a function call with
 `ExStatsD.timing/2`:
@@ -106,8 +112,9 @@ ExStatsD.timing "foo.bar", fn ->
 end, sample_rate: 0.5
 ```
 
-Note that (as of v0.3.0), regardless of the sample rate the function
-is always called -- it's just not always measured.
+Note that, regardless of the sample rate, the function is always
+called -- it's just not always measured. Also note that the return
+value of the measured function is returned, making this suitable for pipelining.
 
 ### Sets
 
@@ -116,6 +123,8 @@ A value can be recorded in a set with `ExStatsD.set/2`:
 ```elixir
 user_id |> ExStatsD.set("users")
 ```
+
+Note that the function returns the value, making it suitable for pipelining.
 
 ## Extensions
 
@@ -140,6 +149,8 @@ extension to StatsD is supported for DogStatsD:
 ```elixir
 42 |> ExStatsD.histogram("database.query.time", tags: ["db", "perf"])
 ```
+
+Note that the function returns the value, making it suitable for pipelining.
 
 ## License
 

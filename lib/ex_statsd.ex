@@ -54,12 +54,40 @@ defmodule ExStatsD do
 
   * `sample_rate`: Limit how often the metric is collected
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the amount given as its first argument, making it suitable
+  for pipelining.
   """
   def counter(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
       case decision do
-        {:sample, rate} -> {metric, amount, :c} |> transmit(options, rate); decision
-        _ -> decision
+        {:sample, rate} ->
+          {metric, amount, :c} |> transmit(options, rate)
+          amount
+        _ ->
+          amount
+      end
+    end
+  end
+
+  @doc """
+  Record the Enum.count/1 of an enumerable.
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the collection given as its first argument, making it suitable for
+  pipelining.
+  """
+  def count(collection, metric, options \\ [sample_rate: 1, tags: []]) do
+    value = collection |> Enum.count
+    sampling options, fn(decision) ->
+      case decision do
+        {:sample, rate} ->
+          {metric, value, :c} |> transmit(options, rate)
+          collection
+        _ ->
+          collection
       end
     end
   end
@@ -69,9 +97,12 @@ defmodule ExStatsD do
 
   * `sample_rate`: Limit how often the metric is collected
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  Returns `nil`.
   """
   def increment(metric, options \\ [sample_rate: 1, tags: []]) do
     1 |> counter(metric, options)
+    nil
   end
 
   @doc """
@@ -79,27 +110,38 @@ defmodule ExStatsD do
 
   * `sample_rate`: Limit how often the metric is collected
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  Returns `nil`.
   """
   def decrement(metric, options \\ [sample_rate: 1, tags: []]) do
     -1 |> counter(metric, options)
+    nil
   end
 
   @doc """
   Record a gauge entry.
 
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the amount given as its first argument, making it suitable
+  for pipelining.
   """
   def gauge(amount, metric, options \\ [tags: []]) do
     {metric, amount, :g} |> transmit(options)
+    amount
   end
 
   @doc """
   Record a set metric.
 
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the value given as its first argument, making it suitable
+  for pipelining.
   """
   def set(member, metric, options \\ [tags: []]) do
     {metric, member, :s} |> transmit(options)
+    member
   end
 
   @doc """
@@ -107,20 +149,30 @@ defmodule ExStatsD do
 
   * `sample_rate`: Limit how often the metric is collected
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the value given as its first argument, making it suitable
+  for pipelining.
   """
   def timer(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
       case decision do
-        {:sample, rate} -> {metric, amount, :ms} |> transmit(options, rate); decision
-        _ -> decision
+        {:sample, rate} ->
+          {metric, amount, :ms} |> transmit(options, rate)
+          amount
+        _ ->
+          amount
       end
     end
   end
 
   @doc """
-  ## Options
+  Measure a function call.
+
   * `sample_rate`: Limit how often the metric is collected
   * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the result of the function call, making it suitable
+  for pipelining.
   """
   def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
@@ -130,20 +182,29 @@ defmodule ExStatsD do
           amount = time / 1000.0
           {metric, amount, :ms} |> transmit(options, rate)
           value
-        _ -> fun.()
+        _ ->
+          fun.()
       end
     end
   end
 
   @doc """
-  (DogStatsD-only)
+  Record a histogram value (DogStatsD-only).
+
+  * `sample_rate`: Limit how often the metric is collected
+  * `tags`: Add tags to entry (DogStatsD-only)
+
+  It returns the value given as the first argument, making it suitable for
+  pipelining.
   """
   def histogram(amount, metric, options \\ [sample_rate: 1, tags: []]) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
           {metric, amount, :h} |> transmit(options, rate)
-        _ -> decision
+          amount
+        _ ->
+          amount
       end
     end
   end
