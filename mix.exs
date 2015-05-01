@@ -3,7 +3,7 @@ defmodule ExStatsD.Mixfile do
 
   def project do
     [app: :ex_statsd,
-     version: "0.5.0",
+     version: "0.5.1",
      elixir: "~> 1.0.0",
      package: package,
      deps: deps,
