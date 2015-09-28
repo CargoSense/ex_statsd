@@ -228,7 +228,8 @@ defmodule ExStatsD do
           {time, value} = :timer.tc(fun)
           amount = time / 1000.0
           # We should hard code the amount when we are in test mode.
-          if (Mix.env == :test), do: amount = @timing_stub
+          # But wait, this does not work with :exrm releases ! 
+          # if (Mix.env == :test), do: amount = @timing_stub
           {metric, amount, :h} |> transmit(options, rate)
           value
         _ ->
