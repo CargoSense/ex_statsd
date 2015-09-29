@@ -65,7 +65,7 @@ defmodule ExStatsD.Decorator do
   def metric_options(module, fun_name, arg_length) do
     function_id = "#{fun_name}_#{arg_length}"
     statsd_options = Module.get_attribute(module, :metric_options)
-    options = if (statsd_options) do
+    if (statsd_options) do
       update_metric_options(module, function_id, statsd_options)
     else
       get_metric_options(module, function_id)
