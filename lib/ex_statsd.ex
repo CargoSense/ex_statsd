@@ -182,7 +182,7 @@ defmodule ExStatsD do
           {time, value} = :timer.tc(fun)
           amount = time / 1000.0
           # We should hard code the amount when we are in test mode.
-          if (Mix.env == :test), do: amount = @timing_stub
+          if Application.get_env(:ex_statsd, :test_mode, false), do: amount = @timing_stub
           {metric, amount, :ms} |> transmit(options, rate)
           value
         _ ->
@@ -228,7 +228,7 @@ defmodule ExStatsD do
           {time, value} = :timer.tc(fun)
           amount = time / 1000.0
           # We should hard code the amount when we are in test mode.
-          if (Mix.env == :test), do: amount = @timing_stub
+          if Application.get_env(:ex_statsd, :test_mode, false), do: amount = @timing_stub
           {metric, amount, :h} |> transmit(options, rate)
           value
         _ ->
