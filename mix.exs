@@ -4,7 +4,7 @@ defmodule ExStatsD.Mixfile do
   def project do
     [app: :ex_statsd,
      version: "0.5.1",
-     elixir: "~> 1.0.0",
+     elixir: "~> 1.1",
      package: package,
      deps: deps,
      # Documentation
@@ -44,8 +44,7 @@ defmodule ExStatsD.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{:ex_doc, "~> 0.5", only: :dev},
-     {:earmark, ">= 0.0.0", only: :dev}]
+    [{:ex_doc, "~> 0.10", only: :dev},
+     {:earmark, "~> 0.1", only: :dev}]
   end
-
 end
