@@ -15,7 +15,7 @@ defmodule ExStatsD.Mixfile do
 
   defp package do
     [description: "A StatsD client for Elixir",
-     contributors: ["Bruce Williams"],
+     maintainers: ["Bruce Williams"],
      licenses: ["MIT"],
      links: %{github: "https://github.com/CargoSense/ex_statsd"}]
   end
