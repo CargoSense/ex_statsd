@@ -40,6 +40,14 @@ defmodule ExStatsD do
     GenServer.call(__MODULE__, :stop)
   end
 
+  @doc """
+  Ensure the metrics are sent.
+  """
+  @spec flush :: :ok
+  def flush do
+    GenServer.call(__MODULE__, :flush)
+  end
+
   @doc false
   defp parse_host(host) when is_binary(host) do
     case host |> to_char_list |> :inet.parse_address do
@@ -295,4 +303,8 @@ defmodule ExStatsD do
     {:noreply, state}
   end
 
+  @doc false
+  def handle_call(:flush, _from, state) do
+    {:reply, :ok, state}
+  end
 end

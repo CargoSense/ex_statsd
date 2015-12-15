@@ -101,6 +101,10 @@ defmodule ExStatsDTest do
     assert value == 42
   end
 
+  test "flush" do
+    assert :ok == ExStatsD.flush
+  end
+
   defp sent, do: :sys.get_state(ExStatsD).sink
 
 end
