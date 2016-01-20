@@ -273,7 +273,7 @@ defmodule ExStatsD do
 
   defp sample_rate_suffix(1), do: ""
   defp sample_rate_suffix(sample_rate) do
-    ["|@", :io_lib.format('~.2f', [1.0 / sample_rate])]
+    ["|@", :io_lib.format('~.2f', [sample_rate])]
   end
 
   defp tags_suffix([]), do: ""
