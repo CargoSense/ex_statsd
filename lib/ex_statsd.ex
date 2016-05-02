@@ -245,6 +245,24 @@ defmodule ExStatsD do
     end
   end
 
+  @doc """
+  Emit event.
+
+  Available options:
+  * `tags`: Add tags to entry (DogStatsD-only)
+  * `priority`: Can be *normal* or *low*, default *normal*
+  * `alert_type`: Can be *error*, *warning*, *info* or *success*, default *info*
+  * `aggregation_key`: Assign an aggregation key to the event, to group it with some others
+  * `hostname`: Assign a hostname to the event
+  * `source_type`: Assign a source type to the event
+
+  It returns the title of the event, making it suitable for pipelining.
+  """
+  def event(title, text \\ "", options \\ [tags: []]) do
+    {:event, title, text, options} |> transmit(options)
+    title
+  end
+
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.({:sample, 1})
@@ -268,6 +286,20 @@ defmodule ExStatsD do
      ":#{value}|#{type}",
      sample_rate |> sample_rate_suffix,
      tags |> tags_suffix
+    ] |> IO.iodata_to_binary
+  end
+
+  defp packet({:event, title, text, opts}, _namespace, tags, _sample_rate) do
+    [
+      "_e",
+      "{#{title |> String.length},#{text |> String.length}}",
+      ":#{title}|#{text}",
+      opts[:priority]         && "|p:#{opts[:priority]}" || "",
+      opts[:alert_type]       && "|t:#{opts[:alert_type]}" || "",
+      opts[:source_type]      && "|s:#{opts[:source_type]}" || "",
+      opts[:aggregation_key]  && "|k:#{opts[:aggregation_key]}" || "",
+      opts[:hostname]         && "|h:#{opts[:hostname]}" || "",
+      tags |> tags_suffix
     ] |> IO.iodata_to_binary
   end
 
