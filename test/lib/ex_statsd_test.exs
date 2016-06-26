@@ -101,6 +101,11 @@ defmodule ExStatsDTest do
     assert value == 42
   end
 
+  test "stop", %{pid: pid} do
+    assert :ok == ExStatsD.stop
+    refute Process.alive?(pid)
+  end
+
   test "flush" do
     assert :ok == ExStatsD.flush
   end
