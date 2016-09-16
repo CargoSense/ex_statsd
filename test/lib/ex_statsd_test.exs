@@ -36,6 +36,20 @@ defmodule ExStatsDTest do
     ExStatsD.increment("events", sample_rate: 0.15)
   end
 
+  test "increment with default tags" do
+    with_tags ~w(baz taz), fn ->
+      ExStatsD.increment("events")
+      assert sent == ["test.events:1|c|#baz,taz"]
+    end
+  end
+
+  test "increment with default & custom tags" do
+    with_tags ~w(baz taz), fn ->
+      ExStatsD.increment("events", tags: ~w(foo bar))
+      assert sent == ["test.events:1|c|#baz,taz,foo,bar"]
+    end
+  end
+
   test "decrement" do
     ExStatsD.decrement("events")
     assert sent == ["test.events:-1|c"]
@@ -106,5 +120,16 @@ defmodule ExStatsDTest do
   end
 
   defp sent, do: :sys.get_state(ExStatsD).sink
+  defp with_tags(tags, func) do
+    :ok = GenServer.stop(ExStatsD)
+    old_tags = Application.get_env :ex_statsd, :tags
+    Application.put_env :ex_statsd, :tags, tags
+    {:ok, _} = ExStatsD.start_link
 
+    func.()
+
+    :ok = GenServer.stop(ExStatsD)
+    Application.put_env :ex_statsd, :tags, old_tags
+    {:ok, _} = ExStatsD.start_link
+  end
 end

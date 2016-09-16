@@ -34,11 +34,22 @@ config :ex_statsd,
        namespace: "your-app"
 ```
 
+You can also use system environment variables like:
+
+```elixir
+use Mix.Config
+
+config :ex_statsd,
+       host: {:system, "STATSD_HOSTNAME"},
+       port: {:system, "STATSD_PORT", 8125} # you can also define default value
+```
+
 The defaults are:
 
  * host: 127.0.0.1
  * port: 8125
  * namespace: nil
+ * tags: []
 
 The following are the basic metric types. Additional features are
 described in "Extensions," below.
@@ -140,6 +151,15 @@ option, eg:
 ```elixir
 ExStatsD.increment("cart.added", tags: ~w(foo bar))
 ```
+
+You can also configure default tags for all events, eg:
+
+```elixir
+config :ex_statsd, tags: ~w(env:staging app:web)
+```
+
+When using environment variable, separate tags by comma, eg: `export STATSD_TAGS=foo,bar,baz`
+
 
 #### Histograms
 
