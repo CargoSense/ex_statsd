@@ -1,22 +1,11 @@
 defmodule ExStatsD do
   @moduledoc """
   Settings are taken from the `ex_statsd` application configuration.
-
-  The following are used to connect to your statsd server:
-
-   * `host`: The hostname or IP address (default: 127.0.0.1)
-   * `port`: The port number (default: 8125)
-
-  You can also provide an optional `namespace` to automatically nest all
-  stats.
+  See `ExStatsD.Config` for all the options.
   """
 
   use GenServer
 
-  @default_port 8125
-  @default_host "127.0.0.1"
-  @default_namespace nil
-  @default_sink nil
   @timing_stub 1.234
 
   # CLIENT
@@ -25,12 +14,7 @@ defmodule ExStatsD do
   Start the server.
   """
   def start_link(options \\ []) do
-    state = %{port:      Application.get_env(:ex_statsd, :port, @default_port),
-              host:      Application.get_env(:ex_statsd, :host, @default_host) |> parse_host,
-              namespace: Application.get_env(:ex_statsd, :namespace, @default_namespace),
-              sink:      Application.get_env(:ex_statsd, :sink, @default_sink),
-              socket:    nil}
-    GenServer.start_link(__MODULE__, state, [name: __MODULE__] ++ options)
+    GenServer.start_link(__MODULE__, ExStatsD.Config.generate, [name: __MODULE__] ++ options)
   end
 
   @doc """
@@ -48,13 +32,6 @@ defmodule ExStatsD do
     GenServer.call(__MODULE__, :flush)
   end
 
-  @doc false
-  defp parse_host(host) when is_binary(host) do
-    case host |> to_char_list |> :inet.parse_address do
-      {:error, _}    -> host |> String.to_atom
-      {:ok, address} -> address
-    end
-  end
 
   # API
 

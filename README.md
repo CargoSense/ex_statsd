@@ -34,6 +34,16 @@ config :ex_statsd,
        namespace: "your-app"
 ```
 
+You can also use system environment variables like:
+
+```elixir
+use Mix.Config
+
+config :ex_statsd,
+       host: {:system, "STATSD_HOSTNAME"},
+       port: {:system, "STATSD_PORT", 8125} # you can also define default value
+```
+
 The defaults are:
 
  * host: 127.0.0.1
