@@ -5,6 +5,8 @@ defmodule ExStatsD.Config do
    * `host`: The hostname or IP address (default: 127.0.0.1)
    * `port`: The port number (default: 8125)
    * `namespace`: The namespace to prefix all the keys (default: nil)
+   * `tags`: The tags to use in all requests - part of dogstatd extension (default: [])
+             When storing in env var, divide by commas.
    * `sink` (default: nil)
 
   You can also use environment variables on runtime, just specify the name
@@ -15,6 +17,7 @@ defmodule ExStatsD.Config do
   @default_port 8125
   @default_host "127.0.0.1"
   @default_namespace nil
+  @default_tags []
   @default_sink nil
 
   @doc """
@@ -25,6 +28,7 @@ defmodule ExStatsD.Config do
       port:      get(:port, @default_port),
       host:      get(:host, @default_host) |> parse_host,
       namespace: get(:namespace, @default_namespace),
+      tags:      get(:tags, @default_tags) |> parse_tags,
       sink:      get(:sink, @default_sink),
       socket:    nil
     }
@@ -56,4 +60,9 @@ defmodule ExStatsD.Config do
       {:ok, address} -> address
     end
   end
+
+  defp parse_tags(nil), do: []
+  defp parse_tags(""),  do: []
+  defp parse_tags(tags) when is_binary(tags), do: tags |> String.split(",")
+  defp parse_tags(tags), do: tags
 end
