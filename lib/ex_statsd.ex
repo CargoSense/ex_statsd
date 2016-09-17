@@ -25,12 +25,12 @@ defmodule ExStatsD do
   Start the server.
   """
   def start_link(options \\ []) do
-    state = %{port:      Application.get_env(:ex_statsd, :port, @default_port),
-              host:      Application.get_env(:ex_statsd, :host, @default_host) |> parse_host,
-              namespace: Application.get_env(:ex_statsd, :namespace, @default_namespace),
-              sink:      Application.get_env(:ex_statsd, :sink, @default_sink),
+    state = %{port:      Keyword.get(options, :port, default_config(:port, @default_port)),
+              host:      Keyword.get(options, :host, default_config(:host, @default_host)) |> parse_host,
+              namespace: Keyword.get(options, :namespace, default_config(:namespace, @default_namespace)),
+              sink:      Keyword.get(options, :sink, default_config(:sink, @default_sink)),
               socket:    nil}
-    GenServer.start_link(__MODULE__, state, [name: __MODULE__] ++ options)
+    GenServer.start_link(__MODULE__, state, Keyword.merge([name: __MODULE__], options))
   end
 
   @doc """
@@ -243,6 +243,10 @@ defmodule ExStatsD do
           fun.()
       end
     end
+  end
+
+  defp default_config(key, fallback) do
+    Application.get_env(:ex_statsd, key, fallback)
   end
 
   defp sampling(options, fun) when is_list(options) do
