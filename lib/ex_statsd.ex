@@ -36,16 +36,16 @@ defmodule ExStatsD do
   @doc """
   Stop the server.
   """
-  def stop do
-    GenServer.call(__MODULE__, :stop)
+  def stop(name \\__MODULE__) do
+    GenServer.call(name, :stop)
   end
 
   @doc """
   Ensure the metrics are sent.
   """
   @spec flush :: :ok
-  def flush do
-    GenServer.call(__MODULE__, :flush)
+  def flush(name \\__MODULE__) do
+    GenServer.call(name, :flush)
   end
 
   @doc false
@@ -67,7 +67,7 @@ defmodule ExStatsD do
   It returns the amount given as its first argument, making it suitable
   for pipelining.
   """
-  def counter(amount, metric, options \\ [sample_rate: 1, tags: []]) do
+  def counter(amount, metric, options \\ default_options) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -88,7 +88,7 @@ defmodule ExStatsD do
   It returns the collection given as its first argument, making it suitable for
   pipelining.
   """
-  def count(collection, metric, options \\ [sample_rate: 1, tags: []]) do
+  def count(collection, metric, options \\ default_options) do
     value = collection |> Enum.count
     sampling options, fn(decision) ->
       case decision do
@@ -109,7 +109,7 @@ defmodule ExStatsD do
 
   Returns `nil`.
   """
-  def increment(metric, options \\ [sample_rate: 1, tags: []]) do
+  def increment(metric, options \\ default_options) do
     1 |> counter(metric, options)
     nil
   end
@@ -122,7 +122,7 @@ defmodule ExStatsD do
 
   Returns `nil`.
   """
-  def decrement(metric, options \\ [sample_rate: 1, tags: []]) do
+  def decrement(metric, options \\ default_options) do
     -1 |> counter(metric, options)
     nil
   end
@@ -162,7 +162,7 @@ defmodule ExStatsD do
   It returns the value given as its first argument, making it suitable
   for pipelining.
   """
-  def timer(amount, metric, options \\ [sample_rate: 1, tags: []]) do
+  def timer(amount, metric, options \\ default_options) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -183,7 +183,7 @@ defmodule ExStatsD do
   It returns the result of the function call, making it suitable
   for pipelining.
   """
-  def timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
+  def timing(metric, fun, options \\ default_options) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -208,7 +208,7 @@ defmodule ExStatsD do
   It returns the value given as the first argument, making it suitable for
   pipelining.
   """
-  def histogram(amount, metric, options \\ [sample_rate: 1, tags: []]) do
+  def histogram(amount, metric, options \\ default_options) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -229,7 +229,7 @@ defmodule ExStatsD do
   It returns the result of the function call, making it suitable
   for pipelining.
   """
-  def histogram_timing(metric, fun, options \\ [sample_rate: 1, tags: []]) do
+  def histogram_timing(metric, fun, options \\ default_options) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -249,6 +249,8 @@ defmodule ExStatsD do
     Application.get_env(:ex_statsd, key, fallback)
   end
 
+  defp default_options, do: [sample_rate: 1, tags: [], name: __MODULE__]
+
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.({:sample, 1})
@@ -264,7 +266,8 @@ defmodule ExStatsD do
 
   defp transmit(message, options), do: transmit(message, options, 1)
   defp transmit(message, options, sample_rate) do
-    GenServer.cast(__MODULE__, {:transmit, message, options, sample_rate})
+    name = Keyword.get(options, :name, __MODULE__)
+    GenServer.cast(name, {:transmit, message, options, sample_rate})
   end
 
   defp packet({key, value, type}, namespace, tags, sample_rate) do

@@ -2,6 +2,15 @@ defmodule ExStatsDTest do
   use ExUnit.Case
 
   describe "with non-default options" do
+    test "override name through options" do
+      name = :dog_data
+      options = [name: name]
+
+      {:ok, pid} = ExStatsD.start_link(options)
+
+      assert Process.whereis(:dog_data) === pid
+    end
+
     test "override port through options" do
       port = 8080
       options = [port: port]
@@ -30,12 +39,21 @@ defmodule ExStatsDTest do
     end
 
     test "override sink through options" do
-      sink = "everything_except_the_sink"
+      sink = "everything_except_the_kitchen_sink"
       options = [sink: sink]
 
       {:ok, _pid} = ExStatsD.start_link(options)
 
       assert state.sink == sink
+    end
+
+    test "transmits data through correct server" do
+      options = [name: :the_name]
+      {:ok, _pid} = ExStatsD.start_link(options)
+
+      values = 1..100 |> ExStatsD.count("items", options)
+
+      assert sent(:the_name) == ["test.items:100|c"]
     end
   end
 
@@ -149,6 +167,6 @@ defmodule ExStatsDTest do
     :sys.get_state(name)
   end
 
-  defp sent, do: state.sink
+  defp sent(name \\ExStatsD), do: state(name).sink
 
 end
