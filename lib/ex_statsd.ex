@@ -24,6 +24,19 @@ defmodule ExStatsD do
   @doc """
   Start the server.
   """
+  @type statsd_port :: number
+  @type host :: String.t
+  @type sink :: String.t
+  @type name :: String.t
+  @type namespace :: String.t
+  @type options :: [
+    port: statsd_port,
+    host: host,
+    namespace: namespace,
+    sink: sink,
+    name: name
+  ]
+  @spec start_link(options) :: {:ok, pid}
   def start_link(options \\ []) do
     state = %{port:      Keyword.get(options, :port, default_config(:port, @default_port)),
               host:      Keyword.get(options, :host, default_config(:host, @default_host)) |> parse_host,
@@ -67,7 +80,7 @@ defmodule ExStatsD do
   It returns the amount given as its first argument, making it suitable
   for pipelining.
   """
-  def counter(amount, metric, options \\ default_options) do
+  def counter(amount, metric, options \\ default_options()) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -88,7 +101,7 @@ defmodule ExStatsD do
   It returns the collection given as its first argument, making it suitable for
   pipelining.
   """
-  def count(collection, metric, options \\ default_options) do
+  def count(collection, metric, options \\ default_options()) do
     value = collection |> Enum.count
     sampling options, fn(decision) ->
       case decision do
@@ -109,7 +122,7 @@ defmodule ExStatsD do
 
   Returns `nil`.
   """
-  def increment(metric, options \\ default_options) do
+  def increment(metric, options \\ default_options()) do
     1 |> counter(metric, options)
     nil
   end
@@ -122,7 +135,7 @@ defmodule ExStatsD do
 
   Returns `nil`.
   """
-  def decrement(metric, options \\ default_options) do
+  def decrement(metric, options \\ default_options()) do
     -1 |> counter(metric, options)
     nil
   end
@@ -162,7 +175,7 @@ defmodule ExStatsD do
   It returns the value given as its first argument, making it suitable
   for pipelining.
   """
-  def timer(amount, metric, options \\ default_options) do
+  def timer(amount, metric, options \\ default_options()) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -183,7 +196,7 @@ defmodule ExStatsD do
   It returns the result of the function call, making it suitable
   for pipelining.
   """
-  def timing(metric, fun, options \\ default_options) do
+  def timing(metric, fun, options \\ default_options()) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -208,7 +221,7 @@ defmodule ExStatsD do
   It returns the value given as the first argument, making it suitable for
   pipelining.
   """
-  def histogram(amount, metric, options \\ default_options) do
+  def histogram(amount, metric, options \\ default_options()) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->
@@ -229,7 +242,7 @@ defmodule ExStatsD do
   It returns the result of the function call, making it suitable
   for pipelining.
   """
-  def histogram_timing(metric, fun, options \\ default_options) do
+  def histogram_timing(metric, fun, options \\ default_options()) do
     sampling options, fn(decision) ->
       case decision do
         {:sample, rate} ->

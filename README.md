@@ -236,6 +236,31 @@ To achieve this you can manually start a `ExStatsD` instance.
 
 Of course, it's your own responsibility to supervise these servers.
 
+To do that, you can use [Supervisors](http://elixir-lang.org/docs/stable/elixir/Supervisor.html)
+
+```elixir
+defmodule StatsDSupervisor do
+  use Supervisor
+
+  def start_link do
+    Supervisor.start_link(__MODULE__, [])
+  end
+
+  def init(_) do
+    children = [
+      worker(ExStatsD, [[name: :first_name, namespace: "first.namespace"]], [id: "first_id"]),
+      worker(ExStatsD, [[name: :second_name, namespace: "second.namespace"]], [id: "second_id"])
+    ]
+
+    options = [
+      strategy: :one_for_one, name: StatsDSupervisor
+    ]
+
+    supervise(children, options)
+  end
+end
+```
+
 
 The items that can be overridden include
 * port
