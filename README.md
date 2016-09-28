@@ -219,6 +219,55 @@ There are 2 global options available. Both will apply to all functions that foll
  * `@default_metric_options`: Metric options to use unless overridden with `@metric_options`. Defaults to [].
  * `@use_histogram`: Send results using histograms instead of gauges. For use with Datadog's DogStatD. Defaults to false.
 
+## Starting your own ExStatsD Server
+
+There may be use cases where you need several `ExStatsD` instances. You may have several `namespaces` you need to send stats to, or maybe you have multiple statsd services you need to publish to.
+
+To achieve this you can manually start a `ExStatsD` instance.
+
+```elixir
+  {:ok, _first_pid} = ExStatsD.start_link([name: :first, namespace: "first.namespace"])
+
+  {:ok, _second_pid} = ExStatsD.start_link([name: :second, namespace: "second.namespace"])
+
+  ExStatsD.increment("the.thing", name: :first) # nil
+  ExStatsD.increment("another.thing", name: :second) # nil
+```
+
+Of course, it's your own responsibility to supervise these servers.
+
+To do that, you can use [Supervisors](http://elixir-lang.org/docs/stable/elixir/Supervisor.html)
+
+```elixir
+defmodule StatsDSupervisor do
+  use Supervisor
+
+  def start_link do
+    Supervisor.start_link(__MODULE__, [])
+  end
+
+  def init(_) do
+    children = [
+      worker(ExStatsD, [[name: :first_name, namespace: "first.namespace"]], [id: "first_id"]),
+      worker(ExStatsD, [[name: :second_name, namespace: "second.namespace"]], [id: "second_id"])
+    ]
+
+    options = [
+      strategy: :one_for_one, name: StatsDSupervisor
+    ]
+
+    supervise(children, options)
+  end
+end
+```
+
+
+The items that can be overridden include
+* port
+* host
+* namespace
+* sink
+
 ## License
 
 The MIT License (MIT)
