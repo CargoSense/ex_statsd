@@ -25,7 +25,7 @@ defmodule ExStatsD.Config do
   """
   def generate do
     %{
-      port:      get(:port, @default_port),
+      port:      get(:port, @default_port) |> parse_port,
       host:      get(:host, @default_host) |> parse_host,
       namespace: get(:namespace, @default_namespace),
       tags:      get(:tags, @default_tags) |> parse_tags,
@@ -53,6 +53,10 @@ defmodule ExStatsD.Config do
   defp finalize(value) do
     value
   end
+
+  defp parse_port(port) when is_integer(port), do: port
+  defp parse_port(port) when is_bitstring(port), do: port |> String.to_integer
+  defp parse_port(port) when is_nil(port), do: 8125
 
   defp parse_host(host) when is_binary(host) do
     case host |> to_char_list |> :inet.parse_address do
