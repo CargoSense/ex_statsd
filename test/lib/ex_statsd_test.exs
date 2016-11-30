@@ -51,7 +51,7 @@ defmodule ExStatsDTest do
       options = [name: :the_name]
       {:ok, _pid} = ExStatsD.start_link(options)
 
-      values = 1..100 |> ExStatsD.count("items", options)
+      1..100 |> ExStatsD.count("items", options)
 
       assert sent(:the_name) == ["test.items:100|c"]
     end
