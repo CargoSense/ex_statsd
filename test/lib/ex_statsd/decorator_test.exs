@@ -48,8 +48,9 @@ defmodule ExStatsD.DecoratorTest do
   setup do
     {:ok, pid} = ExStatsD.start_link
     # Lets cheat for sampling here. Setting the seed like this should set the
-    # 3 next calls to :random.uniform as 0.01, 0.89 and 0.11
-    :random.seed(0, 0, 0)
+    # 3 next calls to :rand.uniform as
+    # 0.08510493518573344, 0.215260150460339, 0.7332665701643833
+    :rand.seed(:exs64, {0, 0, 6})
     {:ok, pid: pid}
   end
 

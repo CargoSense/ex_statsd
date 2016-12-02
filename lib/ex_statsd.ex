@@ -271,7 +271,7 @@ defmodule ExStatsD do
     end
   end
   defp sample(sample_rate, fun) do
-    case :random.uniform <= sample_rate do
+    case :rand.uniform <= sample_rate do
       true -> fun.({:sample, sample_rate})
       _ -> fun.(:no_sample)
     end
