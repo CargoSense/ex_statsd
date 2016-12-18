@@ -11,6 +11,7 @@ defmodule ExStatsD do
   stats.
   """
 
+  alias ExStatsD.Config
   use GenServer
 
   @default_port 8125
@@ -38,10 +39,10 @@ defmodule ExStatsD do
   ]
   @spec start_link(options) :: {:ok, pid}
   def start_link(options \\ []) do
-    state = %{port:      Keyword.get(options, :port, default_config(:port, @default_port)),
-              host:      Keyword.get(options, :host, default_config(:host, @default_host)) |> parse_host,
-              namespace: Keyword.get(options, :namespace, default_config(:namespace, @default_namespace)),
-              sink:      Keyword.get(options, :sink, default_config(:sink, @default_sink)),
+    state = %{port:      Keyword.get(options, :port, Config.get(:port, @default_port)),
+              host:      Keyword.get(options, :host, Config.get(:host, @default_host)) |> parse_host,
+              namespace: Keyword.get(options, :namespace, Config.get(:namespace, @default_namespace)),
+              sink:      Keyword.get(options, :sink, Config.get(:sink, @default_sink)),
               socket:    nil}
     GenServer.start_link(__MODULE__, state, Keyword.merge([name: __MODULE__], options))
   end
@@ -254,13 +255,9 @@ defmodule ExStatsD do
           value
         _ ->
           fun.()
+        end
       end
     end
-  end
-
-  defp default_config(key, fallback) do
-    Application.get_env(:ex_statsd, key, fallback)
-  end
 
   defp default_options, do: [sample_rate: 1, tags: [], name: __MODULE__]
 
