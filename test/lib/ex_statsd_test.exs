@@ -51,7 +51,7 @@ defmodule ExStatsDTest do
       options = [name: :the_name]
       {:ok, _pid} = ExStatsD.start_link(options)
 
-      values = 1..100 |> ExStatsD.count("items", options)
+      1..100 |> ExStatsD.count("items", options)
 
       assert sent(:the_name) == ["test.items:100|c"]
     end
@@ -160,6 +160,33 @@ defmodule ExStatsDTest do
 
     test "flush" do
       assert :ok == ExStatsD.flush
+    end
+  end
+
+  describe "runtime configuration change" do
+    setup do
+      {:ok, _pid} = ExStatsD.start_link
+      :ok
+    end
+
+    test "can change namespace" do
+      :ok = ExStatsD.change_config(namespace: "another_good_namespace")
+      assert state.namespace == "another_good_namespace"
+    end
+
+    test "can change port" do
+      :ok = ExStatsD.change_config(port: 8080)
+      assert state.port == 8080
+    end
+
+    test "can change host" do
+      :ok = ExStatsD.change_config(host: "the_thing")
+      assert state.host == "the_thing"
+    end
+
+    test "can overwrite sink" do
+      :ok = ExStatsD.change_config(sink: "everything_except_the_kitchen_sink")
+      assert state.sink == "everything_except_the_kitchen_sink"
     end
   end
 

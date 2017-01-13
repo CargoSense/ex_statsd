@@ -62,6 +62,27 @@ defmodule ExStatsD do
     GenServer.call(name, :flush)
   end
 
+  @doc """
+  Update the StatsD configuration.
+
+  Changeable settings are `:port`, `:host`, `namespace` and `sink`.
+  """
+  @changeable_configuration [:port, :host, :namespace, :sink]
+  @type changeable_options :: [
+    port: statsd_port,
+    host: host,
+    namespace: namespace,
+    sink: sink
+  ]
+  @spec change_config(pid, options) :: :ok
+  def change_config(name \\__MODULE__, options) do
+    state = options
+            |> Enum.into(%{})
+            |> Map.take(@changeable_configuration)
+
+    GenServer.call(name, {:change_config, state})
+  end
+
   @doc false
   defp parse_host(host) when is_binary(host) do
     case host |> to_char_list |> :inet.parse_address do
@@ -323,5 +344,10 @@ defmodule ExStatsD do
   @doc false
   def handle_call(:flush, _from, state) do
     {:reply, :ok, state}
+  end
+
+  @doc false
+  def handle_call({:change_config, new_state}, _from, state) do
+    {:reply, :ok, Map.merge(state, new_state)}
   end
 end
