@@ -50,8 +50,8 @@ defmodule ExStatsD do
   @doc """
   Stop the server.
   """
-  def stop(name \\__MODULE__) do
-    GenServer.call(name, :stop)
+  def stop(name \\ __MODULE__) do
+    GenServer.stop(name)
   end
 
   @doc """
