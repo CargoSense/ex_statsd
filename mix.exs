@@ -5,8 +5,8 @@ defmodule ExStatsD.Mixfile do
     [app: :ex_statsd,
      version: "0.5.3",
      elixir: "~> 1.0",
-     package: package,
-     deps: deps,
+     package: package(),
+     deps: deps(),
      # Documentation
      name: "ex_statsd",
      source_url: "https://github.com/CargoSense/ex_statsd",

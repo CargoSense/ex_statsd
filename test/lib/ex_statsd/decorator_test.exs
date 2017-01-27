@@ -59,13 +59,13 @@ defmodule ExStatsD.DecoratorTest do
   test "basic wrapper with defaults" do
     assert DecoratedModule.simple === :simple
     expected = [@prefix<>"simple_0:1.234|ms"]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "custom metric name" do
     assert DecoratedModule.custom_name === :custom_name
     expected = ["test.custom_key:1.234|ms"]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "custom metric name does not leak to next function" do
@@ -75,7 +75,7 @@ defmodule ExStatsD.DecoratorTest do
       @prefix<>"custom_name_gone_0:1.234|ms",
       "test.custom_key:1.234|ms"
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "custom metric name falling to next in match unless changed" do
@@ -87,7 +87,7 @@ defmodule ExStatsD.DecoratorTest do
       "test.multi_0_or_1:1.234|ms",
       "test.multi_0_or_1:1.234|ms"
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "tags are set and don't leak" do
@@ -97,7 +97,7 @@ defmodule ExStatsD.DecoratorTest do
       @prefix<>"options_gone_0:1.234|ms",
       @prefix<>"with_options_0:1.234|ms|#mytag"
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "tags fall through and get updated" do
@@ -109,7 +109,7 @@ defmodule ExStatsD.DecoratorTest do
       @prefix<>"multi_options_1:1.234|ms|#options_fall_through",
       @prefix<>"multi_options_1:1.234|ms|#options_fall_through",
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "send using histogram when enabled in all following functions" do
@@ -119,7 +119,7 @@ defmodule ExStatsD.DecoratorTest do
       @prefix<>"multi_attrs_3:1.234|h",
       @prefix<>"multi_attrs_2:1.234|h"
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   test "default options can be changed" do
@@ -129,7 +129,7 @@ defmodule ExStatsD.DecoratorTest do
       @prefix<>"unbound_attr_1:1.234|h|#mine",
       @prefix<>"ignored_attr_1:1.234|h|#mine"
     ]
-    assert sent == expected
+    assert sent() == expected
   end
 
   defp sent, do: :sys.get_state(ExStatsD).sink
