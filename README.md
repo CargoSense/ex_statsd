@@ -164,6 +164,16 @@ ExStatsD.histogram_timing "foo.bar", fn ->
   # Time something
 end
 ```
+#### Events
+
+[Datadog events](http://docs.datadoghq.com/guides/dogstatsd/#events) can be emitted, with second parameter supporting multiline text.
+
+```elixir
+ExStatsD.event("wow!")
+ExStatsD.event("not good","real\nbad", alert_type: :error, tags: ["db"])
+```
+
+See ExStatsD.event documentation for more options.
 
 ### Decorators
 
