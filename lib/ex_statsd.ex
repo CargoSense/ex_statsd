@@ -265,6 +265,27 @@ defmodule ExStatsD do
 
   defp default_options, do: [sample_rate: 1, tags: [], name: __MODULE__]
 
+  @doc """
+  Emit event.
+
+  `text` supports line breaks, only first 4KB will be transmitted.
+
+  Available options:
+  * `tags`: Add tags to entry (DogStatsD-only)
+  * `priority`: Can be *normal* or *low*, default *normal*
+  * `alert_type`: Can be *error*, *warning*, *info* or *success*, default *info*
+  * `aggregation_key`: Assign an aggregation key to the event, to group it with some others
+  * `hostname`: Assign a hostname to the event
+  * `source_type_name`: Assign a source type to the event
+  * `date_happened`: Assign a timestamp to the event, default current time
+
+  It returns the title of the event, making it suitable for pipelining.
+  """
+  def event(title, text \\ "", options \\ [tags: []]) do
+    {:event, title, text, options} |> transmit(options)
+    title
+  end
+
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.({:sample, 1})
@@ -295,7 +316,23 @@ defmodule ExStatsD do
      ":#{value}|#{type}",
      sample_rate |> sample_rate_suffix,
      tags |> tags_suffix
-    ] |> IO.iodata_to_binary
+    ]
+  end
+
+  defp packet({:event, title, text, opts}, _namespace, tags, _sample_rate) do
+    text = text |> String.replace("\n","\\n") |> String.slice(0, 4096)
+    [
+      "_e",
+      "{#{title |> byte_size},#{text |> byte_size}}",
+      ":#{title}|#{text}",
+      opts[:priority]         && "|p:#{opts[:priority]}" || "",
+      opts[:alert_type]       && "|t:#{opts[:alert_type]}" || "",
+      opts[:source_type_name] && "|s:#{opts[:source_type_name]}" || "",
+      opts[:aggregation_key]  && "|k:#{opts[:aggregation_key]}" || "",
+      opts[:hostname]         && "|h:#{opts[:hostname]}" || "",
+      opts[:date_happened]    && "|d:#{opts[:date_happened]}" || "",
+      tags |> tags_suffix
+    ]
   end
 
   defp sample_rate_suffix(1), do: ""
@@ -315,8 +352,14 @@ defmodule ExStatsD do
 
   @doc false
   def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink, tags: root_tags} = state) when is_list(sink) do
-    tags = options |> Keyword.get(:tags, []) |> compile_tags(root_tags)
-    pkt = message |> packet(state.namespace, tags, sample_rate)
+    tags =
+      options
+      |> Keyword.get(:tags, [])
+      |> compile_tags(root_tags)
+    pkt =
+      message
+      |> packet(state.namespace, tags, sample_rate)
+      |> IO.iodata_to_binary
     {:noreply, %{state | sink: [pkt | sink]}}
   end
 

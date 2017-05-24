@@ -172,6 +172,31 @@ defmodule ExStatsDTest do
     end
   end
 
+  describe "datadog events" do
+
+    setup do
+      {:ok, pid} = ExStatsD.start_link
+      {:ok, pid: pid}
+    end
+
+    test "event" do
+      value = ExStatsD.event("oops","some data")
+      assert sent() == ["_e{4,9}:oops|some data"]
+      assert value == "oops"
+    end
+
+    test "event with options" do
+      value = ExStatsD.event("foo","bar\nbaz", alert_type: :error, priority: :low, aggregation_key: "moo", hostname: "x", tags: ["foo:bar"])
+      assert sent() == [~S(_e{3,8}:foo|bar\nbaz|p:low|t:error|k:moo|h:x|#foo:bar)]
+      assert value == "foo"
+    end
+
+    test "flush" do
+      assert :ok == ExStatsD.flush
+    end
+
+  end
+
   defp state(name \\ ExStatsD) do
     :sys.get_state(name)
   end
