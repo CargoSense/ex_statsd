@@ -18,6 +18,7 @@ defmodule ExStatsD do
   @default_host "127.0.0.1"
   @default_namespace nil
   @default_sink nil
+  @default_tags []
   @timing_stub 1.234
 
   # CLIENT
@@ -28,6 +29,7 @@ defmodule ExStatsD do
   @type statsd_port :: number
   @type host :: String.t
   @type sink :: String.t
+  @type tags :: [String.t]
   @type name :: String.t
   @type namespace :: String.t
   @type options :: [
@@ -35,14 +37,16 @@ defmodule ExStatsD do
     host: host,
     namespace: namespace,
     sink: sink,
+    tags: tags,
     name: name
   ]
   @spec start_link(options) :: {:ok, pid}
   def start_link(options \\ []) do
-    state = %{port:      Keyword.get(options, :port, Config.get(:port, @default_port)),
-              host:      Keyword.get(options, :host, Config.get(:host, @default_host)) |> parse_host,
+    state = %{port:      Keyword.get(options, :port,      Config.get(:port, @default_port)),
+              host:      Keyword.get(options, :host,      Config.get(:host, @default_host)) |> parse_host,
               namespace: Keyword.get(options, :namespace, Config.get(:namespace, @default_namespace)),
-              sink:      Keyword.get(options, :sink, Config.get(:sink, @default_sink)),
+              sink:      Keyword.get(options, :sink,      Config.get(:sink, @default_sink)),
+              tags:      Keyword.get(options, :tags,      Config.get(:tags, @default_tags)),
               socket:    nil}
     GenServer.start_link(__MODULE__, state, Keyword.merge([name: __MODULE__], options))
   end
@@ -280,6 +284,12 @@ defmodule ExStatsD do
     GenServer.cast(name, {:transmit, message, options, sample_rate})
   end
 
+  defp compile_tags(tags, root_tags) do
+    Enum.uniq_by(tags ++ root_tags, fn(tag) ->
+      tag |> to_string |> String.split(":") |> List.first
+    end)
+  end
+
   defp packet({key, value, type}, namespace, tags, sample_rate) do
     [key |> stat_name(namespace),
      ":#{value}|#{type}",
@@ -304,15 +314,15 @@ defmodule ExStatsD do
   # SERVER
 
   @doc false
-  def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink} = state) when is_list(sink) do
-    tags = Keyword.get(options, :tags, [])
+  def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink, tags: root_tags} = state) when is_list(sink) do
+    tags = options |> Keyword.get(:tags, []) |> compile_tags(root_tags)
     pkt = message |> packet(state.namespace, tags, sample_rate)
     {:noreply, %{state | sink: [pkt | sink]}}
   end
 
   @doc false
-  def handle_cast({:transmit, message, options, sample_rate}, state) do
-    tags = Keyword.get(options, :tags, [])
+  def handle_cast({:transmit, message, options, sample_rate}, %{tags: root_tags} = state) do
+    tags = options |> Keyword.get(:tags, []) |> compile_tags(root_tags)
     pkt = message |> packet(state.namespace, tags, sample_rate)
     {:ok, socket} = :gen_udp.open(0, [:binary])
     :gen_udp.send(socket, state.host, state.port, pkt)

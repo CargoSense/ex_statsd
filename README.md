@@ -31,7 +31,8 @@ use Mix.Config
 config :ex_statsd,
        host: "your.statsd.host.com",
        port: 1234,
-       namespace: "your-app"
+       namespace: "your-app",
+       tags: ["env:#{Mix.env}"]
 ```
 
 The defaults are:
@@ -39,6 +40,7 @@ The defaults are:
  * host: 127.0.0.1
  * port: 8125
  * namespace: nil
+ * tags: []
 
 The following are the basic metric types. Additional features are
 described in "Extensions," below.

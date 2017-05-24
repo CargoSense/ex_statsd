@@ -47,6 +47,15 @@ defmodule ExStatsDTest do
       assert state().sink == sink
     end
 
+    test "override root tags through options" do
+      tags = ["env:prod"]
+      options = [tags: tags]
+
+      {:ok, _pid} = ExStatsD.start_link(options)
+
+      assert state().tags == tags
+    end
+
     test "transmits data through correct server" do
       options = [name: :the_name]
       {:ok, _pid} = ExStatsD.start_link(options)
