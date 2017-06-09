@@ -18,6 +18,7 @@ defmodule ExStatsD do
   @default_host "127.0.0.1"
   @default_namespace nil
   @default_sink nil
+  @default_tags []
   @timing_stub 1.234
 
   # CLIENT
@@ -28,6 +29,7 @@ defmodule ExStatsD do
   @type statsd_port :: number
   @type host :: String.t
   @type sink :: String.t
+  @type tags :: [String.t]
   @type name :: String.t
   @type namespace :: String.t
   @type options :: [
@@ -35,14 +37,16 @@ defmodule ExStatsD do
     host: host,
     namespace: namespace,
     sink: sink,
+    tags: tags,
     name: name
   ]
   @spec start_link(options) :: {:ok, pid}
   def start_link(options \\ []) do
-    state = %{port:      Keyword.get(options, :port, Config.get(:port, @default_port)),
-              host:      Keyword.get(options, :host, Config.get(:host, @default_host)) |> parse_host,
+    state = %{port:      Keyword.get(options, :port,      Config.get(:port, @default_port)),
+              host:      Keyword.get(options, :host,      Config.get(:host, @default_host)) |> parse_host,
               namespace: Keyword.get(options, :namespace, Config.get(:namespace, @default_namespace)),
-              sink:      Keyword.get(options, :sink, Config.get(:sink, @default_sink)),
+              sink:      Keyword.get(options, :sink,      Config.get(:sink, @default_sink)),
+              tags:      Keyword.get(options, :tags,      Config.get(:tags, @default_tags)),
               socket:    nil}
     GenServer.start_link(__MODULE__, state, Keyword.merge([name: __MODULE__], options))
   end
@@ -261,6 +265,27 @@ defmodule ExStatsD do
 
   defp default_options, do: [sample_rate: 1, tags: [], name: __MODULE__]
 
+  @doc """
+  Emit event.
+
+  `text` supports line breaks, only first 4KB will be transmitted.
+
+  Available options:
+  * `tags`: Add tags to entry (DogStatsD-only)
+  * `priority`: Can be *normal* or *low*, default *normal*
+  * `alert_type`: Can be *error*, *warning*, *info* or *success*, default *info*
+  * `aggregation_key`: Assign an aggregation key to the event, to group it with some others
+  * `hostname`: Assign a hostname to the event
+  * `source_type_name`: Assign a source type to the event
+  * `date_happened`: Assign a timestamp to the event, default current time
+
+  It returns the title of the event, making it suitable for pipelining.
+  """
+  def event(title, text \\ "", options \\ [tags: []]) do
+    {:event, title, text, options} |> transmit(options)
+    title
+  end
+
   defp sampling(options, fun) when is_list(options) do
     case Keyword.get(options, :sample_rate, 1) do
       1 -> fun.({:sample, 1})
@@ -280,12 +305,34 @@ defmodule ExStatsD do
     GenServer.cast(name, {:transmit, message, options, sample_rate})
   end
 
+  defp compile_tags(tags, root_tags) do
+    Enum.uniq_by(tags ++ root_tags, fn(tag) ->
+      tag |> to_string |> String.split(":") |> List.first
+    end)
+  end
+
   defp packet({key, value, type}, namespace, tags, sample_rate) do
     [key |> stat_name(namespace),
      ":#{value}|#{type}",
      sample_rate |> sample_rate_suffix,
      tags |> tags_suffix
-    ] |> IO.iodata_to_binary
+    ]
+  end
+
+  defp packet({:event, title, text, opts}, _namespace, tags, _sample_rate) do
+    text = text |> String.replace("\n","\\n") |> String.slice(0, 4096)
+    [
+      "_e",
+      "{#{title |> byte_size},#{text |> byte_size}}",
+      ":#{title}|#{text}",
+      opts[:priority]         && "|p:#{opts[:priority]}" || "",
+      opts[:alert_type]       && "|t:#{opts[:alert_type]}" || "",
+      opts[:source_type_name] && "|s:#{opts[:source_type_name]}" || "",
+      opts[:aggregation_key]  && "|k:#{opts[:aggregation_key]}" || "",
+      opts[:hostname]         && "|h:#{opts[:hostname]}" || "",
+      opts[:date_happened]    && "|d:#{opts[:date_happened]}" || "",
+      tags |> tags_suffix
+    ]
   end
 
   defp sample_rate_suffix(1), do: ""
@@ -304,16 +351,22 @@ defmodule ExStatsD do
   # SERVER
 
   @doc false
-  def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink} = state) when is_list(sink) do
-    tags = Keyword.get(options, :tags, [])
-    pkt = message |> packet(state.namespace, tags, sample_rate)
+  def handle_cast({:transmit, message, options, sample_rate}, %{sink: sink, tags: root_tags} = state) when is_list(sink) do
+    tags =
+      options
+      |> Keyword.get(:tags, [])
+      |> compile_tags(root_tags)
+    pkt =
+      message
+      |> packet(state.namespace, tags, sample_rate)
+      |> IO.iodata_to_binary
     {:noreply, %{state | sink: [pkt | sink]}}
   end
 
   @doc false
-  def handle_cast({:transmit, message, options, sample_rate}, state) do
+  def handle_cast({:transmit, message, options, sample_rate}, %{tags: root_tags} = state) do
+    tags = options |> Keyword.get(:tags, []) |> compile_tags(root_tags)
     state_with_socket = maybe_open_socket(state)
-    tags = Keyword.get(options, :tags, [])
     pkt = message |> packet(state_with_socket.namespace, tags, sample_rate)
     :gen_udp.send(state_with_socket.socket, pkt)
     {:noreply, state_with_socket}

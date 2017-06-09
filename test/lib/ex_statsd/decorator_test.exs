@@ -1,8 +1,6 @@
 defmodule ExStatsD.DecoratorTest do
   use ExUnit.Case, async: false
 
-  @stubbed_timing 1.234
-
   defmodule DecoratedModule do
     use ExStatsD.Decorator
 
