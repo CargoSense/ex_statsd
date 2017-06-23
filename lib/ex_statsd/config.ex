@@ -25,6 +25,7 @@ defmodule ExStatsD.Config do
 
     value = case Application.get_env(app, key) do
       {:system, env_var} -> System.get_env(env_var)
+      {:system, env_var, default} -> System.get_env(env_var) || default
       value -> value
     end
 
