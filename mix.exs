@@ -2,14 +2,14 @@ defmodule ExStatsD.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :ex_statsd,
-     version: "0.5.3",
+    [app: :ex_statsd_pd,
+     version: "0.6.0",
      elixir: "~> 1.0",
      package: package(),
      deps: deps(),
      # Documentation
      name: "ex_statsd",
-     source_url: "https://github.com/CargoSense/ex_statsd",
+     source_url: "https://github.com/PagerDuty/ex_statsd",
      docs: [readme: true, main: "overview"]]
   end
 
@@ -17,7 +17,7 @@ defmodule ExStatsD.Mixfile do
     [description: "A StatsD client for Elixir",
      maintainers: ["Bruce Williams"],
      licenses: ["MIT"],
-     links: %{github: "https://github.com/CargoSense/ex_statsd"}]
+     links: %{github: "https://github.com/PagerDuty/ex_statsd"}]
   end
 
   # Configuration for the OTP application
