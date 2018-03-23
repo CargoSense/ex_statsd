@@ -1,6 +1,14 @@
 ExStatsD
 ========
 
+# IMPORTANT NOTE
+
+**ExStatsD is no longer actively maintained and should be considered abandonware.**
+
+Please take a look at [statix](https://github.com/lexmag/statix) instead.
+
+---
+
 A [statsd](https://github.com/etsy/statsd) client implementation for
 Elixir.
 
