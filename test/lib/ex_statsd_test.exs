@@ -20,6 +20,15 @@ defmodule ExStatsDTest do
       assert state().port == port
     end
 
+    test "convert port to number" do
+      port = "8080"
+      options = [port: port]
+
+      {:ok, _pid} = ExStatsD.start_link(options)
+
+      assert state().port == 8080
+    end
+
     test "override host through options" do
       host = "the_thing"
       options = [host: host]

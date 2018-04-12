@@ -23,4 +23,17 @@ defmodule ExStatsD.ConfigTest do
     System.delete_env("SYSTEM_KEY")
     Application.delete_env(:ex_statsd, :key)
   end
+
+  test "reads system value with default" do
+    System.put_env("SYSTEM_KEY_WITH_DEFAULT", "DEFINED_VALUE")
+    Application.put_env(:ex_statsd, :key, {:system, "SYSTEM_KEY_WITH_DEFAULT", "DEFAULT_VALUE"})
+    value = Config.get(:key)
+    assert value == "DEFINED_VALUE"
+
+    System.delete_env("SYSTEM_KEY_WITH_DEFAULT")
+    value = Config.get(:key)
+    assert value == "DEFAULT_VALUE"
+
+    Application.delete_env(:ex_statsd, :key)
+  end
 end

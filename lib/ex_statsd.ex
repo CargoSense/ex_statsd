@@ -42,7 +42,7 @@ defmodule ExStatsD do
   ]
   @spec start_link(options) :: {:ok, pid}
   def start_link(options \\ []) do
-    state = %{port:      Keyword.get(options, :port,      Config.get(:port, @default_port)),
+    state = %{port:      Keyword.get(options, :port,      Config.get(:port, @default_port)) |> parse_port,
               host:      Keyword.get(options, :host,      Config.get(:host, @default_host)) |> parse_host,
               namespace: Keyword.get(options, :namespace, Config.get(:namespace, @default_namespace)),
               sink:      Keyword.get(options, :sink,      Config.get(:sink, @default_sink)),
@@ -73,6 +73,9 @@ defmodule ExStatsD do
       {:ok, address} -> address
     end
   end
+
+  defp parse_port(port) when is_integer(port), do: port
+  defp parse_port(port) when is_binary(port), do: String.to_integer(port)
 
   # API
 
