@@ -67,12 +67,18 @@ defmodule ExStatsD do
   end
 
   @doc false
+  defp parse_host({:system, name}), do: parse_host(System.get_env(name))
+
+  @doc false
   defp parse_host(host) when is_binary(host) do
     case host |> to_char_list |> :inet.parse_address do
       {:error, _}    -> host |> String.to_atom
       {:ok, address} -> address
     end
   end
+
+  @doc false
+  defp parse_host(nil), do: parse_host(@default_host)
 
   # API
 
